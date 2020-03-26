@@ -3,6 +3,10 @@ import sys
 import itertools
 import random
 
+# This is a constant that determines the maximum number of cuts we consider (up to 4)
+# As making it 4 slows down my heuristic significantly and, from what I saw,
+#  doesn't actually change the results, this is currently set to 3 (but the tests were performed with 4).
+MAX_M_OPT = 3
 
 def euclid(p, q):
     x = p[0] - q[0]
@@ -152,25 +156,22 @@ class Graph:
         random.seed()
         m = 1
         for _ in range(self.n*30):
-            if m == 5:
+            print("m is currently equal to " + str(m))
+
+            if m == MAX_M_OPT + 1: # if transformations of all degrees failed, finish early
                 return;
                 random.shuffle(self.perm)
                 m = 0
-            print(self.tourValue())
+
+            print("current tour value:" + str(self.tourValue()))
             best_improv, self.perm = self.myHeuristicTryBetter(m)
             if best_improv < self.tourValue()/1000.0:
                 m = m + 1
             else:
                 m = 1
-            print("switching to m = " + str(m))
 
 
     def myHeuristicTryBetter(self, m):
-        # # cyclic rotation, as this algorithm is not fully symmetric
-        #
-        # for _ in range(random.randint(1, self.n - 1)):
-        #     self.perm = [self.perm[-1]] + self.perm[:-1]
-
         very_good_improv = self.tourValue() / 100.0
 
         def get_new_range(at_least, less_than, left_to_choose):
@@ -241,7 +242,6 @@ class Graph:
 # g.TwoOptHeuristic()
 # print(g.tourValue())
 #
-# g = Graph(-1,"cool_tests/many_circles_n_5rs_1000_2000_4000_8000")
-# g.Greedy()
-# g.TwoOptHeuristic()
+# g = Graph(6,"sixnodes")
+# g.myHeuristic()
 # print(g.tourValue())

@@ -62,7 +62,7 @@ If improvement over a single iteration was less than 1$\%$, we switch to more cu
  \SetKwFunction{MyHeuristicIteration}{MyHeuristicIteration}
  \KwResult{best permutation found by the heuristic}
  $m_{opt} \leftarrow 1$ \;
- \For{$iterations \leftarrow 0$ \KwTo $10n$} {
+ \For{$iterations \leftarrow 0$ \KwTo $30n$} {
   \Improvement, \Perm $\leftarrow$ \MyHeuristicIteration{$m_{opt}$}\;
   \uIf{improvement smaller than $0.1\%$ of current solution cost}{
    	increase $m_{opt}$ by 1\;
@@ -89,7 +89,7 @@ If improvement over a single iteration was less than 1$\%$, we switch to more cu
    \SetKwFunction{TourValue}{TourValue}
  \KwResult{best improvement found when cutting in $m_{opt}$ places (one iteration)}
  \BestTour $\leftarrow$ \Perm\;
- \ForAll{indices $i,j,k,l$ dividing perm} {
+ \ForAll{indices $i,j,k,l$ dividing perm  	\tcp*{some might be -1s, if $m_{opt} < 4$} } {
 	\Intervals $\leftarrow$ \emph{subpaths after cutting the solution in $i,j,k,l$}\;
 	\ForAll{\ReversedIntervals $\leftarrow$ possibilities of reversing some subpaths}{
 		\ForAll{\PermutedSubpaths $\leftarrow$ possibilities of permuting \ReversedIntervals } {	
@@ -119,27 +119,43 @@ Therefore, the total time complexity is $O(n^6)$.
 The memory complexity is $O(n^2)$ as we need to maintain costs of edges and we do not need to maintain more than that at any time.
 
 \section*{D. Experiments}
-\begin{tabular}{|c|c|c|c|c|}
+
+\newcounter{magicrownumbers}
+\newcommand\rownumber{\stepcounter{magicrownumbers}\arabic{magicrownumbers}}
+
+\begin{tabular}{|c|c|c|c|c|c|}
 \hline 
-Test & Swap & 2-Opt & Greedy & My heuristic \\ 
-\hline 
-\begin{tabular}{@{}c@{}} 30 points placed evenly on a circle of radius 1000,\\ shuffled randomly \end{tabular} & 29025 & 6272 & 6272 & 6272 \\
+ & Description & Swap & 2-Opt & Greedy & My heuristic \\ 
 \hline
-\begin{tabular}{@{}c@{}} 5 per circle with radii: 1k, 2k, 4k, 8k + 5 random,\\sorted by distance from the origin \end{tabular} & 104617 & 68729 & 75383 & 64982 \\ 
+\rownumber & \begin{tabular}{@{}c@{}} 30 random points with coordinates\\ with magnitudes of 10 and less \end{tabular} & 257 & 101 & 115 & \textbf{99}\\
+\hline
+\rownumber & \begin{tabular}{@{}c@{}} 30 random points with $x \in <-10, 10>$\\ and $y \in <-10000, 10000>$ \end{tabular} & 120826 & \textbf{37385} & 37386 & \textbf{37385}\\
+\hline
+\rownumber & 
+\begin{tabular}{@{}c@{}} 30 points placed evenly on a circle of radius 1000,\\ shuffled randomly \end{tabular} & 29025 & \textbf{6272} & \textbf{6272} & \textbf{6272} \\
+\hline
+\rownumber & \begin{tabular}{@{}c@{}} 5 per circle with radii: 1k, 2k, 4k, 8k + 5 random,\\sorted by distance from the origin \end{tabular} & 104617 & 68729 & 75383 & \textbf{64982} \\ 
 \hline 
-\end{tabular} 
+\rownumber & \begin{tabular}{@{}c@{}} 20 per circle with radii: 1k, 2k, 4k, 8k,\\sorted by distance from the origin \end{tabular} & 265427 & 117870 & 103379 & \textbf{101286} \\ 
+\hline 
+\rownumber & \begin{tabular}{@{}c@{}} 50 vertices with edge weights\\ chosen randomly from $<1,100>$ \end{tabular} & 1536 & 318 & 392 & \textbf{266}\\
+\hline
+\end{tabular}
+
 
 \begin{enumerate}
+\item As expected, heuristics that used more general transformations got better results (My heuristic had a smaller cost than 2-Opt and it, in turn, had a smaller cost than Swap).
+\item Making the interval for y-s signifcantly wider increased the gap between Swap and the rest. As distances increase linearly with scaling, this wider gap should be caused by the increasingly worse relative quality of solutions that Swap yields. I have confirmed this with further tests (I have taken $y \in <-10^7,10^7>$).
 \item Even though the points were shuffled, all but one heuristics managed to get the optimal solution (going along the circle). Therefore, this suggest that there are local minima which are significantly higher than the global minimum for swaps. The results for Swap and Two-Opt can be seen in Figure 1.
-\item All other heuristics outperformed Swap again. From what I saw when I plotted the solution, it did not go stricly along the circles (and this state was a local minimum). My heuristic performed significantly better - I suspect this was due to the fact that it 
-\item 
+\item All other heuristics outperformed Swap again. From what I saw when I plotted the solution, it did not go stricly along the circles (and this state was a local minimum). My heuristic performed significantly better - I suspect this was due to the fact that it was able to do more complicated transformations and get itself out of more local minima.
+\item This test is very similar to the previous one. What is interesting is that Greedy outperformed 2-Opt (as it followed the circles, because of its design). The results are visualised in Figure 2.
 
 \end{enumerate}
 
 \begin{figure}
 \includegraphics[scale=0.5]{CircleSwap.png}
 \includegraphics[scale=0.5]{CircleTwoOpt.png}
-\caption{Swap and Two-Opt results for points placed evenly on a circle}
+\caption{Swap and Two-Opt solutions for points placed evenly on a circle, shuffled}
 \end{figure}
 
 \begin{figure}
@@ -147,7 +163,7 @@ Test & Swap & 2-Opt & Greedy & My heuristic \\
 \includegraphics[scale=0.5]{20CirclesTwoOpt.png}
 \includegraphics[scale=0.5]{20CirclesGreedy.png}
 \includegraphics[scale=0.5]{20CirclesMyHeuristic.png}
-\caption{Results for points placed evenly on 4 circles with radii 1000, 2000, 4000, 8000}
+\caption{Solutions for points placed evenly on 4 circles with radii 1000, 2000, 4000, 8000, initially sorted by distance from the origin (same order as in the table)}
 \end{figure}
 
 \end{document}
